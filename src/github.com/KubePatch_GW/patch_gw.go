@@ -1,4 +1,4 @@
-package services_gwcp
+package main
 
 import (
 	"flag"
@@ -31,6 +31,7 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Println(config)
 	fmt.Println(clientset)
 	//deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
 
