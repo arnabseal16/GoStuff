@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"path/filepath"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
@@ -21,7 +23,7 @@ func main() {
 	}
 	flag.Parse()
 
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig) //Build config obj from kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("041922983057-host1", *kubeconfig) //Build config obj from kubeconfig
 	if err != nil {
 		panic(err)
 	}
@@ -31,8 +33,19 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(config)
-	fmt.Println(clientset)
-	//deploymentsClient := clientset.AppsV1().Deployments(apiv1.NamespaceDefault)
+	options := metav1.ListOptions{
+		LabelSelector: "app=<APPNAME>",
+	}
+	deploymentsClient, err := clientset.AppsV1().Deployments("contorller-systems").List(context.TODO(), options)
+	if err != nil {
+		panic(err)
+	}
+
+	// result, getErr := deploymentsClient.Get(context.TODO(), "", metav1.GetOptions{})
+	// if getErr != nil {
+	// 	panic(fmt.Errorf("failed to get latest version of deployment: %v", getErr))
+	// }
+
+	fmt.Println(deploymentsClient)
 
 }
