@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
@@ -23,29 +25,39 @@ func main() {
 	}
 	flag.Parse()
 
-	config, err := clientcmd.BuildConfigFromFlags("041922983057-host1", *kubeconfig) //Build config obj from kubeconfig
+	kubeConfigPath := *kubeconfig
+
+	config, err := getClusterConfig(kubeConfigPath)
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 
 	clientset, err := kubernetes.NewForConfig(config) //Builds the clientset from config obj
 	if err != nil {
 		panic(err)
 	}
-
+	name := "haproxy-ingress"
+	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"app": name}}
 	options := metav1.ListOptions{
-		LabelSelector: "app=<APPNAME>",
+		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
+		//FieldSelector: resources.limits.cpu=100
 	}
-	deploymentsClient, err := clientset.AppsV1().Deployments("contorller-systems").List(context.TODO(), options)
-	if err != nil {
-		panic(err)
-	}
+	deploymentsClient := clientset.AppsV1().Deployments("atmos-system")
 
+	fmt.Println(deploymentsClient.List(context.TODO(), options))
 	// result, getErr := deploymentsClient.Get(context.TODO(), "", metav1.GetOptions{})
 	// if getErr != nil {
 	// 	panic(fmt.Errorf("failed to get latest version of deployment: %v", getErr))
 	// }
 
-	fmt.Println(deploymentsClient)
+	// fmt.Println(deploymentsClient)
+	// fmt.Println(result)
+}
 
+func getClusterConfig(kubeConfigPath string) (*rest.Config, error) {
+	if kubeConfigPath != "" {
+		//  when not running in cluster
+		return clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+	}
+	return rest.InClusterConfig()
 }
